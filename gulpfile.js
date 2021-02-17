@@ -9,6 +9,7 @@ const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
 const plumber = require('gulp-plumber');
+const browserSync = require('browser-sync');
 /* const replace = require('gulp-replace'); */
 
 // File paths
@@ -25,7 +26,8 @@ function scssTask() {
     .pipe(sass.sync()) // compile SCSS to CSS
     .pipe(postcss([autoprefixer(), cssnano()])) // PostCSS runs plugins
     .pipe(sourcemaps.write('.')) // write sourcemaps file in current directory
-    .pipe(dest('dist')); // put final CSS in dist folder
+    .pipe(dest('app/css')) // put final CSS in app folder
+    .pipe(browserSync.stream());
 }
 
 // JS task: concatenates and uglifies JS files to script.js
@@ -37,7 +39,7 @@ function jsTask() {
     .pipe(plumber())
     .pipe(concat('bundle.js'))
     .pipe(uglify())
-    .pipe(dest('dist'));
+    .pipe(dest('app/dist'));
 }
 
 //
@@ -46,11 +48,25 @@ function jsTask() {
 // Watch task: watch SCSS and JS files for changes
 // If any change, run scss and js tasks simultaneously
 function watchTask() {
+  watch('app/*.html', browserSyncReload);
   watch(
     [files.scssPath, files.jsPath],
     // prettier-ignore
-    parallel(scssTask, jsTask)
+    series(scssTask, jsTask, browserSyncReload)
   );
+}
+
+function browserSyncServe(cb) {
+  browserSync.init({
+    server: {
+      baseDir: 'app',
+    },
+  });
+  cb();
+}
+function browserSyncReload(cb) {
+  browserSync.reload();
+  cb();
 }
 
 //
@@ -60,5 +76,6 @@ function watchTask() {
 // prettier-ignore
 exports.default = series(
     parallel(scssTask, jsTask),
+    browserSyncServe,
     watchTask
 );

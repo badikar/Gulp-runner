@@ -1,4 +1,4 @@
-// Initialize modules destructured)
+// Initialize required modules - destructured)
 const { src, dest, watch, series, parallel } = require('gulp');
 // Import all required packages
 const sass = require('gulp-sass');
@@ -8,19 +8,21 @@ const uglify = require('gulp-uglify');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
+const plumber = require('gulp-plumber');
 /* const replace = require('gulp-replace'); */
 
 // File paths
 const files = {
-  scssPath: 'app/scss/**/*.scss',
+  scssPath: 'app/sass/**/*.scss',
   jsPath: 'app/js/**/*.js',
 };
 
 // Sass task: compiles the style.scss file into style.css
 function scssTask() {
   return src(files.scssPath)
+    .pipe(plumber())
     .pipe(sourcemaps.init()) // initialize sourcemaps first
-    .pipe(sass()) // compile SCSS to CSS
+    .pipe(sass.sync()) // compile SCSS to CSS
     .pipe(postcss([autoprefixer(), cssnano()])) // PostCSS runs plugins
     .pipe(sourcemaps.write('.')) // write sourcemaps file in current directory
     .pipe(dest('dist')); // put final CSS in dist folder
@@ -32,6 +34,7 @@ function jsTask() {
     files.jsPath,
     // ,'!' + 'includes/js/jquery.min.js', // to exclude any specific files
   ])
+    .pipe(plumber())
     .pipe(concat('bundle.js'))
     .pipe(uglify())
     .pipe(dest('dist'));
@@ -45,7 +48,7 @@ function jsTask() {
 function watchTask() {
   watch(
     [files.scssPath, files.jsPath],
-    { interval: 1000, usePolling: true }, // Makes docker work
+    // prettier-ignore
     parallel(scssTask, jsTask)
   );
 }

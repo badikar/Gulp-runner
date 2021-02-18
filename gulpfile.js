@@ -10,17 +10,12 @@ const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
 const plumber = require('gulp-plumber');
 const browserSync = require('browser-sync');
+const del = require('del');
 /* const replace = require('gulp-replace'); */
-
-// File paths
-const files = {
-  scssPath: 'app/sass/**/*.scss',
-  jsPath: 'app/js/**/*.js',
-};
 
 // Sass task: compiles the style.scss file into style.css
 function scssTask() {
-  return src(files.scssPath)
+  return src('app/sass/**/*.scss')
     .pipe(plumber())
     .pipe(sourcemaps.init()) // initialize sourcemaps first
     .pipe(sass.sync()) // compile SCSS to CSS
@@ -31,29 +26,18 @@ function scssTask() {
 }
 
 // JS task: concatenates and uglifies JS files to script.js
-function jsTask() {
-  return src([
-    files.jsPath,
-    // ,'!' + 'includes/js/jquery.min.js', // to exclude any specific files
-  ])
+/* function jsTask() {
+  return src([files.jsPath])
     .pipe(plumber())
     .pipe(concat('bundle.js'))
     .pipe(uglify())
     .pipe(dest('app/dist'));
-}
+} */
 
-//
-//
-
-// Watch task: watch SCSS and JS files for changes
-// If any change, run scss and js tasks simultaneously
 function watchTask() {
-  watch('app/*.html', browserSyncReload);
-  watch(
-    [files.scssPath, files.jsPath],
-    // prettier-ignore
-    series(scssTask, jsTask, browserSyncReload)
-  );
+  watch(['app/*.html', 'app/**/*.js'], browserSyncReload);
+  // prettier-ignore
+  watch('app/sass/**/*.scss', scssTask);
 }
 
 function browserSyncServe(cb) {
@@ -69,13 +53,15 @@ function browserSyncReload(cb) {
   cb();
 }
 
-//
-// Export the default Gulp task so it can be run
-// Runs the scss and js tasks simultaneously
-// then runs cacheBust, then watch task
+function cleanTask(cb) {
+  del('dist/');
+  cb();
+}
+
 // prettier-ignore
 exports.default = series(
-    parallel(scssTask, jsTask),
+    cleanTask,
+    scssTask,
     browserSyncServe,
     watchTask
 );

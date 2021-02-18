@@ -1,2 +1,2 @@
-const jquerky = 'onee';
+const jquerky = 'oneee';
 console.log(jquerky);

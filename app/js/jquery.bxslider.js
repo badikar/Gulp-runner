@@ -1,2 +1,2 @@
-const slider = 'bxsliderJS';
+const slider = 'bxslidehhhhhrJS';
 console.log(slider);

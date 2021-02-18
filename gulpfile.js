@@ -11,6 +11,7 @@ const cssnano = require('cssnano');
 const plumber = require('gulp-plumber');
 const browserSync = require('browser-sync');
 const del = require('del');
+const useref = require('gulp-useref');
 /* const replace = require('gulp-replace'); */
 
 // Sass task: compiles the style.scss file into style.css
@@ -34,10 +35,12 @@ function scssTask() {
     .pipe(dest('app/dist'));
 } */
 
-function watchTask() {
-  watch(['app/*.html', 'app/**/*.js'], browserSyncReload);
+function htmlTask() {
   // prettier-ignore
-  watch('app/sass/**/*.scss', scssTask);
+  return src('app/*html')
+    .pipe(useref())
+    .pipe(dest('dist/'))
+  /* .pipe(browserSync.stream()); */
 }
 
 function browserSyncServe(cb) {
@@ -53,6 +56,12 @@ function browserSyncReload(cb) {
   cb();
 }
 
+function watchTask() {
+  watch(['app/*.html', 'app/**/*.js'], htmlTask, browserSyncReload);
+  // prettier-ignore
+  watch('app/sass/**/*.scss', scssTask);
+}
+
 function cleanTask(cb) {
   del('dist/');
   cb();
@@ -61,7 +70,9 @@ function cleanTask(cb) {
 // prettier-ignore
 exports.default = series(
     cleanTask,
-    scssTask,
+    parallel(scssTask,htmlTask) ,
     browserSyncServe,
-    watchTask
+    watchTask,
+
 );
+/* exports.htmlTask = series(htmlTask); */

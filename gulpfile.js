@@ -12,13 +12,18 @@ const browserSync = require('browser-sync');
 const del = require('del');
 const useref = require('gulp-useref');
 const gulpif = require('gulp-if');
+const imagemin = require('gulp-imagemin');
 
 // Sass task: compiles the style.scss file into style.css
-function scssTask() {
+function sassTask() {
   return src('app/sass/**/*.scss')
     .pipe(plumber())
     .pipe(sourcemaps.init()) // initialize sourcemaps first
-    .pipe(sass.sync()) // compile SCSS to CSS
+    .pipe(
+      sass.sync({
+        outputStyle: 'expanded',
+      })
+    ) // compile SCSS to CSS
     .pipe(postcss([autoprefixer(), cssnano()])) // PostCSS runs plugins
     .pipe(sourcemaps.write('.')) // write sourcemaps file in current directory
     .pipe(dest('app/css')) // put final CSS in app folder
@@ -32,7 +37,16 @@ function htmlTask(cb) {
     .pipe(gulpif('*.js', uglify()))
     .pipe(dest('dist/'));
   cb();
-  /* .pipe(browserSync.stream()); */
+}
+
+function imageMin(cb) {
+  // prettier-ignore
+  return src('app/images/*', {
+    base: 'app/'
+    })
+    .pipe(imagemin())
+    .pipe(dest('dist/'));
+  cb();
 }
 
 function browserSyncServe(cb) {
@@ -51,7 +65,8 @@ function browserSyncReload(cb) {
 function watchTask() {
   watch(['app/*.html', 'app/**/*.js'], series(htmlTask, browserSyncReload));
   // prettier-ignore
-  watch('app/sass/**/*.scss', scssTask);
+  watch('app/sass/**/*.scss', sassTask);
+  watch('app/images/*', series(imageMin, browserSyncReload));
 }
 
 function cleanTask(cb) {
@@ -62,7 +77,9 @@ function cleanTask(cb) {
 // prettier-ignore
 exports.default = series(
     cleanTask,
-    parallel(scssTask,htmlTask) ,
+    parallel(sassTask,htmlTask,imageMin),
     browserSyncServe,
     watchTask,
 );
+
+exports.imageMin = series(imageMin);

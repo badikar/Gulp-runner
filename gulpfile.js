@@ -3,7 +3,6 @@ const { src, dest, watch, series, parallel } = require('gulp');
 // Import all required packages
 const sass = require('gulp-sass');
 const sourcemaps = require('gulp-sourcemaps');
-const concat = require('gulp-concat');
 const uglify = require('gulp-uglify');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
@@ -12,7 +11,7 @@ const plumber = require('gulp-plumber');
 const browserSync = require('browser-sync');
 const del = require('del');
 const useref = require('gulp-useref');
-/* const replace = require('gulp-replace'); */
+const gulpif = require('gulp-if');
 
 // Sass task: compiles the style.scss file into style.css
 function scssTask() {
@@ -26,20 +25,13 @@ function scssTask() {
     .pipe(browserSync.stream());
 }
 
-// JS task: concatenates and uglifies JS files to script.js
-/* function jsTask() {
-  return src([files.jsPath])
-    .pipe(plumber())
-    .pipe(concat('bundle.js'))
-    .pipe(uglify())
-    .pipe(dest('app/dist'));
-} */
-
-function htmlTask() {
+function htmlTask(cb) {
   // prettier-ignore
   return src('app/*html')
     .pipe(useref())
-    .pipe(dest('dist/'))
+    .pipe(gulpif('*.js', uglify()))
+    .pipe(dest('dist/'));
+  cb();
   /* .pipe(browserSync.stream()); */
 }
 
@@ -73,6 +65,4 @@ exports.default = series(
     parallel(scssTask,htmlTask) ,
     browserSyncServe,
     watchTask,
-
 );
-/* exports.htmlTask = series(htmlTask); */

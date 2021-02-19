@@ -1,2 +1,2 @@
-const lightbox = 'lightbox';
+const lightbox = 'plugin2';
 console.log(lightbox);

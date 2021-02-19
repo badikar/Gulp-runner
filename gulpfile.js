@@ -57,7 +57,7 @@ function browserSyncReload(cb) {
 }
 
 function watchTask() {
-  watch(['app/*.html', 'app/**/*.js'], htmlTask, browserSyncReload);
+  watch(['app/*.html', 'app/**/*.js'], series(htmlTask, browserSyncReload));
   // prettier-ignore
   watch('app/sass/**/*.scss', scssTask);
 }

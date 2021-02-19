@@ -13,6 +13,7 @@ const del = require('del');
 const useref = require('gulp-useref');
 const gulpif = require('gulp-if');
 const imagemin = require('gulp-imagemin');
+const newer = require('gulp-newer');
 
 // Sass task: compiles the style.scss file into style.css
 function sassTask() {
@@ -39,14 +40,14 @@ function htmlTask(cb) {
   cb();
 }
 
-function imageMin(cb) {
+function imageMin() {
   // prettier-ignore
   return src('app/images/*', {
     base: 'app/'
     })
+    .pipe(newer('app/images/*'))
     .pipe(imagemin())
     .pipe(dest('dist/'));
-  cb();
 }
 
 function browserSyncServe(cb) {
@@ -66,7 +67,7 @@ function watchTask() {
   watch(['app/*.html', 'app/**/*.js'], series(htmlTask, browserSyncReload));
   // prettier-ignore
   watch('app/sass/**/*.scss', sassTask);
-  watch('app/images/*', series(imageMin, browserSyncReload));
+  watch('app/images/*', imageMin);
 }
 
 function cleanTask(cb) {
@@ -81,5 +82,3 @@ exports.default = series(
     browserSyncServe,
     watchTask,
 );
-
-exports.imageMin = series(imageMin);

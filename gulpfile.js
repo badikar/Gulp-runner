@@ -15,7 +15,45 @@ const gulpif = require('gulp-if');
 const imagemin = require('gulp-imagemin');
 const newer = require('gulp-newer');
 
-// Sass task: compiles the style.scss file into style.css
+// Initialize server
+function browserSyncServe(cb) {
+  browserSync.init({
+    server: {
+      baseDir: 'app',
+    },
+  });
+  cb();
+}
+// Reload server
+function browserSyncReload(cb) {
+  browserSync.reload();
+  cb();
+}
+
+// Deletes './DIST/'
+function cleanTask() {
+  return del('dist/');
+}
+
+function copyTask(cb) {
+  // prettier-ignore
+  return src(['app/css/**/*css', 'app/images/**/*', 'app/uploads/**/*'], {
+    base: 'app',
+    })
+    .pipe(dest('dist'));
+  cb();
+}
+
+// Concatenates & uglifies JS files and sends them to './DIST'
+function htmlTask(cb) {
+  // prettier-ignore
+  return src('app/*html')
+    .pipe(useref())
+    .pipe(gulpif('*.js', uglify()))
+    .pipe(dest('dist/'));
+  cb();
+}
+// Sass task: compiles the main.scss file into main.css
 function sassTask() {
   return src('app/sass/**/*.scss')
     .pipe(plumber())
@@ -31,54 +69,41 @@ function sassTask() {
     .pipe(browserSync.stream());
 }
 
-function htmlTask(cb) {
+// Compress img files
+function imgTask(cb) {
   // prettier-ignore
-  return src('app/*html')
-    .pipe(useref())
-    .pipe(gulpif('*.js', uglify()))
-    .pipe(dest('dist/'));
-  cb();
-}
-
-function imageMin() {
-  // prettier-ignore
-  return src('app/images/*', {
-    base: 'app/'
-    })
-    .pipe(newer('app/images/*'))
+  return src('dist/images/*')
+  /*   .pipe(newer('dist/images/*')) */
     .pipe(imagemin())
-    .pipe(dest('dist/'));
-}
-
-function browserSyncServe(cb) {
-  browserSync.init({
-    server: {
-      baseDir: 'app',
-    },
-  });
+    .pipe(dest('dist/images/'));
   cb();
 }
-function browserSyncReload(cb) {
-  browserSync.reload();
+
+function cleanImg(cb) {
+  del('dist/images/**/*');
   cb();
 }
 
 function watchTask() {
   watch(['app/*.html', 'app/**/*.js'], series(htmlTask, browserSyncReload));
-  // prettier-ignore
-  watch('app/sass/**/*.scss', sassTask);
-  watch('app/images/*', imageMin);
-}
-
-function cleanTask(cb) {
-  del('dist/');
-  cb();
+  watch('app/sass/**/*.scss', series(sassTask, copyTask));
+  watch('app/images/**/*', series(cleanImg, copyTask, imgTask));
 }
 
 // prettier-ignore
 exports.default = series(
     cleanTask,
-    parallel(sassTask,htmlTask,imageMin),
+    copyTask,
+    parallel(sassTask,htmlTask,imgTask),
     browserSyncServe,
     watchTask,
 );
+
+/* exports.clean = cleanTask;
+exports.html = htmlTask;
+exports.sass = sassTask;
+exports.copy = copyTask;
+exports.img = imgTask;
+exports.watch = watchTask;
+exports.cleanImg = cleanImg;
+ */
